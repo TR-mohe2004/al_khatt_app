@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "173193851472",
+    "project_id": "al-khatt-app",
+    "storage_bucket": "al-khatt-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:173193851472:android:fb5e51877dbecc6f399755",
+        "android_client_info": {
+          "package_name": "ly.alkhatt.app.al_khatt_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAu55x6aRCy-CPg9ERBAFei8ZhwwIC0VCI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
