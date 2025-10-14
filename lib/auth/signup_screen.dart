@@ -1,388 +1,179 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-class SignUpScreen extends StatefulWidget {
+// --- استيراد الأدوات والخدمات الجديدة ---
+import '../services/auth_service.dart';
+import '../utils/app_colors.dart';
+import '../utils/app_text_styles.dart';
+import '../widgets/custom_button.dart';
+import '../widgets/custom_text_field.dart';
+
+// Riverpod Provider
+final authServiceProvider = Provider<AuthService>((ref) => AuthService());
+
+class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
 
-
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _auth = FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance;
   
-  // Controllers for form fields
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   
+  // سنضيف متغير لنوع المستخدم لاحقاً، الآن سنثبته
+  final String _userType = "driver"; // مثال: سائق
+
   bool _isLoading = false;
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
+  String? _errorMessage;
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _signUp() async {
-    if (_formKey.currentState!.validate()) {
+  // --- هذا هو المنطق الجديد والمهم ---
+  Future<void> _signUpAndProceed() async {
+    // التحقق من صحة المدخلات
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // 1. استدعاء خدمة المصادقة لإنشاء الحساب
+      final authService = ref.read(authServiceProvider);
+      final UserCredential? userCredential = await authService.signUpWithEmail(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        name: _nameController.text.trim(),
+        userType: _userType, // تحديد نوع المستخدم
+      );
+
+      if (userCredential != null && userCredential.user != null) {
+        // 2. إذا نجح إنشاء الحساب، انتقل لشاشة إدخال الهاتف
+        if (mounted) {
+          // استخدام GoRouter للانتقال مع تمرير البيانات
+          context.go(
+            '/phone-input',
+            extra: {
+              'userId': userCredential.user!.uid,
+              'userName': _nameController.text.trim(),
+              'email': _emailController.text.trim(),
+              'userType': _userType,
+            },
+          );
+        }
+      }
+    } catch (e) {
+      // عرض رسالة الخطأ
       setState(() {
-        _isLoading = true;
+        _errorMessage = e.toString();
       });
-
-      try {
-        // Create user with email and password
-        UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-
-        // Save user data to Firestore
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
-          'name': _nameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'createdAt': FieldValue.serverTimestamp(),
-          'uid': userCredential.user!.uid,
+    } finally {
+      // إيقاف التحميل في كل الحالات
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
         });
-
-        // Update display name
-        await userCredential.user!.updateDisplayName(_nameController.text.trim());
-
-        // Show success message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تم إنشاء الحساب بنجاح!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          
-          // Navigate to home screen or login
-          Navigator.pop(context);
-        }
-      } on FirebaseAuthException catch (e) {
-        String errorMessage = 'حدث خطأ في إنشاء الحساب';
-        
-        if (e.code == 'weak-password') {
-          errorMessage = 'كلمة المرور ضعيفة جداً';
-        } else if (e.code == 'email-already-in-use') {
-          errorMessage = 'البريد الإلكتروني مستخدم بالفعل';
-        } else if (e.code == 'invalid-email') {
-          errorMessage = 'البريد الإلكتروني غير صالح';
-        }
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('خطأ: ${e.toString()}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // هنا يمكنك بناء الواجهة التي تريدها
+    // سأستخدم واجهة بسيطة كمثال، يمكنك استبدالها بواجهتك الخاصة
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 40), // <-- تم التصحيح هنا
-                
-                // Logo or App Name
-                const Center(
-                  child: Icon(
-                    Icons.account_circle,
-                    size: 100,
-                    color: Colors.white,
+      backgroundColor: AppColors.backgroundColor,
+      appBar: AppBar(
+        title: const Text('إنشاء حساب جديد'),
+        backgroundColor: AppColors.primaryGold,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 20),
+              Text('مرحباً بك في دالين', style: AppTextStyles.heading1),
+              const SizedBox(height: 10),
+              Text('الرجاء إدخال بياناتك للمتابعة', style: AppTextStyles.bodyMedium),
+              const SizedBox(height: 40),
+
+              // --- استخدام Custom Widgets ---
+              CustomTextField(
+                controller: _nameController,
+                label: 'الاسم الكامل',
+                hint: 'مثال: محمد علي',
+                prefixIcon: const Icon(Icons.person_outline),
+                validator: (value) => value!.isEmpty ? 'الرجاء إدخال الاسم' : null,
+              ),
+              const SizedBox(height: 20),
+              CustomTextField(
+                controller: _emailController,
+                label: 'البريد الإلكتروني',
+                hint: 'example@email.com',
+                prefixIcon: const Icon(Icons.email_outlined),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) => value!.isEmpty ? 'الرجاء إدخال الإيميل' : null,
+              ),
+              const SizedBox(height: 20),
+              CustomTextField(
+                controller: _passwordController,
+                label: 'كلمة المرور',
+                hint: '******',
+                prefixIcon: const Icon(Icons.lock_outline),
+                obscureText: true,
+                validator: (value) => value!.length < 6 ? 'كلمة المرور قصيرة جداً' : null,
+              ),
+              const SizedBox(height: 20),
+
+              // --- عرض رسالة الخطأ ---
+              if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20.0),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: AppColors.errorRed, fontSize: 14),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-                
-                const SizedBox(height: 20), // <-- تم التصحيح هنا
-                
-                // Title
-                const Text(
-                  'إنشاء حساب جديد',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+
+              // --- استخدام CustomButton ---
+              CustomButton(
+                text: 'متابعة إلى التحقق من الهاتف',
+                onPressed: _isLoading ? null : _signUpAndProceed,
+                isLoading: _isLoading,
+              ),
+              
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('لديك حساب بالفعل؟'),
+                  TextButton(
+                    onPressed: () => context.go('/login'),
+                    child: const Text('تسجيل الدخول'),
                   ),
-                ),
-                
-                const SizedBox(height: 10), // <-- تم التصحيح هنا
-                
-                // Subtitle
-                const Text(
-                  'قم بملء البيانات للتسجيل',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
-                ),
-                
-                const SizedBox(height: 40), // <-- تم التصحيح هنا
-                
-                // Form
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      // Name Field
-                      TextFormField(
-                        controller: _nameController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: 'الاسم الكامل',
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(Icons.person, color: Colors.white70),
-                          filled: true,
-                          fillColor: const Color(0xFF2A2D3A),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.blue, width: 2), // <-- تم التصحيح هنا
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'الرجاء إدخال الاسم';
-                          }
-                          if (value.length < 3) {
-                            return 'الاسم يجب أن يكون 3 أحرف على الأقل';
-                          }
-                          return null;
-                        },
-                      ),
-                      
-                      const SizedBox(height: 16), // <-- تم التصحيح هنا
-                      
-                      // Email Field
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: 'البريد الإلكتروني',
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(Icons.email, color: Colors.white70),
-                          filled: true,
-                          fillColor: const Color(0xFF2A2D3A),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.blue, width: 2), // <-- تم التصحيح هنا
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'الرجاء إدخال البريد الإلكتروني';
-                          }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                            return 'الرجاء إدخال بريد إلكتروني صحيح';
-                          }
-                          return null;
-                        },
-                      ),
-                      
-                      const SizedBox(height: 16), // <-- تم التصحيح هنا
-                      
-                      // Password Field
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: 'كلمة المرور',
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(Icons.lock, color: Colors.white70),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                              color: Colors.white70,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFF2A2D3A),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.blue, width: 2), // <-- تم التصحيح هنا
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'الرجاء إدخال كلمة المرور';
-                          }
-                          if (value.length < 6) {
-                            return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
-                          }
-                          return null;
-                        },
-                      ),
-                      
-                      const SizedBox(height: 16), // <-- تم التصحيح هنا
-                      
-                      // Confirm Password Field
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        obscureText: _obscureConfirmPassword,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: 'تأكيد كلمة المرور',
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                              color: Colors.white70,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
-                              });
-                            },
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFF2A2D3A),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.blue, width: 2), // <-- تم التصحيح هنا
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'الرجاء تأكيد كلمة المرور';
-                          }
-                          if (value != _passwordController.text) {
-                            return 'كلمات المرور غير متطابقة';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 30), // <-- تم التصحيح هنا
-                
-                // Sign Up Button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _signUp,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 5,
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'إنشاء حساب',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                ),
-                
-                const SizedBox(height: 20), // <-- تم التصحيح هنا
-                
-                // Already have account
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'لديك حساب بالفعل؟',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text(
-                        'تسجيل الدخول',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

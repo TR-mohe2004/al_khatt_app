@@ -65,4 +65,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'al-khatt-app.firebasestorage.app',
     iosBundleId: 'ly.alkhatt.app.alKhattApp',
   );
+
 }

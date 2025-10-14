@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
+class HomeWrapper extends StatelessWidget {
+  const HomeWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-        child: CircularProgressIndicator(),
+        child: Text('أهلاً بك في الصفحة الرئيسية!'),
       ),
     );
   }
