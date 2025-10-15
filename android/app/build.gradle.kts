@@ -1,37 +1,41 @@
 plugins {
     id("com.android.application")
-    id("com.google.gms.google-services")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "ly.alkhatt.app.al_khatt_app"
-    // --- ✅ تم تحديث compileSdk إلى 36 كما طلب الخطأ --- 
-    compileSdk = 36 
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
         isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
     defaultConfig {
         applicationId = "ly.alkhatt.app.al_khatt_app"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        minSdk = 24
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
+        multiDexEnabled = true
     }
 
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
@@ -41,6 +45,24 @@ flutter {
 }
 
 dependencies {
-    // --- ✅ تم تحديث إصدار desugar_jdk_libs إلى 2.1.4 كما طلب الخطأ --- 
+    // Core library desugaring (مهم للـ flutter_local_notifications)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    
+    // Firebase BoM - إدارة إصدارات Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    
+    // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth")
+    
+    // Firebase Firestore
+    implementation("com.google.firebase:firebase-firestore")
+    
+    // Firebase Storage (إذا كنت تستخدمه)
+    implementation("com.google.firebase:firebase-storage")
+    
+    // MultiDex support
+    implementation("androidx.multidex:multidex:2.0.1")
 }
+
+// تطبيق Google Services في النهاية
+apply(plugin = "com.google.gms.google-services")

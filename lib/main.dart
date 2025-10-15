@@ -45,7 +45,7 @@ class MyApp extends ConsumerWidget {
   }
 }
 
-// --- إعدادات GoRouter النهائية والصحيحة ---
+// --- إعدادات GoRouter المُصلَحة ---
 GoRouter _createRouter(WidgetRef ref) {
   return GoRouter(
     initialLocation: '/splash',
@@ -81,29 +81,35 @@ GoRouter _createRouter(WidgetRef ref) {
     ],
     redirect: (context, state) {
       final authState = ref.read(authStateProvider);
-      final loggedIn = authState.value != null;
       final location = state.matchedLocation;
 
-      if (authState.isLoading || authState.isRefreshing) {
-        return '/splash'; // ابق في شاشة البداية أثناء التحميل
+      // ✅ التعديل الأساسي: السماح بشاشة Splash دائماً بدون إعادة توجيه
+      if (location == '/splash') {
+        return null; // لا تُعيد التوجيه من splash أبداً
       }
 
+      // ✅ انتظار انتهاء التحميل قبل اتخاذ قرارات التوجيه
+      if (authState.isLoading || authState.isRefreshing) {
+        return null; // ابق في المكان الحالي حتى ينتهي التحميل
+      }
+
+      final loggedIn = authState.value != null;
+
       if (loggedIn) {
-        // إذا كان المستخدم مسجلاً ويحاول الوصول لصفحات التسجيل أو البداية، وجهه للرئيسية
-        if (location == '/login' || location == '/signup' || location == '/splash') {
+        // إذا كان المستخدم مسجلاً ويحاول الوصول لصفحات التسجيل، وجهه للرئيسية
+        if (location == '/login' || location == '/signup') {
           return '/home';
         }
       } else {
-        // إذا لم يكن مسجلاً ويحاول الوصول لأي صفحة غير صفحات التسجيل أو البداية، وجهه لتسجيل الدخول
-        if (location != '/login' && location != '/signup' && location != '/splash') {
+        // إذا لم يكن مسجلاً ويحاول الوصول لأي صفحة محمية، وجهه لتسجيل الدخول
+        final publicRoutes = ['/login', '/signup', '/splash'];
+        if (!publicRoutes.contains(location)) {
           return '/login';
         }
       }
       
-      // في كل الحالات الأخرى، ابق في مكانك
       return null;
     },
-    // --- هذا هو السطر الذي تم تصحيحه بالطريقة المضمونة ---
     refreshListenable: GoRouterRefreshStream(ref.read(authServiceProvider).authStateChanges),
   );
 }

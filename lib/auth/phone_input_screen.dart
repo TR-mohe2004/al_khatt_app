@@ -1,10 +1,8 @@
-import '../models/user_model.dart'; // <--- لحل مشكلة 'Unused import' إذا كنت تستخدمه
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_text_styles.dart';
 import '../widgets/custom_button.dart';
-import '../widgets/custom_text_field.dart';
 import '../services/otp_service.dart';
 import '../services/firestore_service.dart';
 import 'otp_verification_screen.dart';
@@ -177,7 +175,7 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: AppColors.lightGold.withOpacity(0.3),
+                      color: AppColors.lightGold.withValues(alpha: 0.3),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -346,10 +344,10 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.errorRed.withOpacity(0.1),
+                      color: AppColors.errorRed.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: AppColors.errorRed.withOpacity(0.3),
+                        color: AppColors.errorRed.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -387,10 +385,10 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.warningOrange.withOpacity(0.1),
+                    color: AppColors.warningOrange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.warningOrange.withOpacity(0.3),
+                      color: AppColors.warningOrange.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Column(
