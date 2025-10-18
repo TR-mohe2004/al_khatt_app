@@ -1,33 +1,12 @@
 import 'package:flutter/material.dart';
 
+// ملف مركزي لجميع ألوان التطبيق لسهولة التعديل
 class AppColors {
-  // الألوان الأساسية من التصميم
-  static const Color primaryGold = Color(0xFFD4A574);
-  static const Color lightGold = Color(0xFFE8D5C4);
-  static const Color darkGold = Color(0xFFC09060);
-  
-  // ألوان الخلفية
-  static const Color backgroundColor = Color(0xFFFAFAFA);
-  static const Color whiteBackground = Color(0xFFFFFFFF);
-  static const Color cardBackground = Color(0xFFF5F5F5);
-  
-  // ألوان النصوص
-  static const Color textDark = Color(0xFF2C2C2C);
-  static const Color textGrey = Color(0xFF757575);
-  static const Color textLight = Color(0xFF9E9E9E);
-  static const Color textWhite = Color(0xFFFFFFFF);
-  
-  // ألوان الحالات
-  static const Color successGreen = Color(0xFF4CAF50);
-  static const Color errorRed = Color(0xFFE53935);
-  static const Color warningOrange = Color(0xFFFF9800);
-  static const Color infoBlue = Color(0xFF2196F3);
-  
-  // ألوان الحدود والفواصل
-  static const Color borderGrey = Color(0xFFE0E0E0);
-  static const Color dividerGrey = Color(0xFFBDBDBD);
-  
-  // ألوان الأزرار
-  static const Color buttonDisabled = Color(0xFFE0E0E0);
-  static const Color buttonShadow = Color(0x29000000);
+  static const Color background = Color(0xFF4A2C1A);      // بني غامق جداً للخلفية الرئيسية
+  static const Color formBackground = Color(0xFFFFFFFF); // أبيض لخلفية النموذج
+  static const Color primaryBrown = Color(0xFF8D6E63);    // بني متوسط للأزرار الرئيسية
+  static const Color primaryText = Color(0xFF3E2723);    // بني غامق للنصوص الرئيسية
+  static const Color secondaryText = Color(0xFF795548);  // بني أفتح للنصوص الثانوية (مثل "ليس لديك حساب؟")
+  static const Color hintText = Color(0xFFBDBDBD);        // رمادي للنصوص المؤقتة داخل الحقول
+  static const Color fieldBorder = Color(0xFFE0E0E0);    // رمادي فاتح لحدود الحقول
 }

@@ -1,32 +1,25 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
+﻿import 'package:flutter/material.dart';
+// import 'package:firebase_core/firebase_core.dart'; // تم التعليق عليه لأنه غير مستخدم حالياً
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:async';
 
-import 'firebase_options.dart';
-import 'services/auth_service.dart';
+// --- استيراد الملفات التي أنشأناها ---
+import 'auth/login_screen.dart'; // استيراد شاشة تسجيل الدخول
+import 'utils/app_colors.dart'; // استيراد ملف الألوان
+// import 'utils/app_text_styles.dart'; // تم التعليق عليه لأنه غير مستخدم في هذا الملف
 
-// --- المسارات الصحيحة للشاشات ---
-import 'screens/misc/splash_screen.dart';
-import 'screens/home/home_wrapper.dart';
-import 'auth/login_screen.dart';
-import 'auth/signup_screen.dart';
-import 'auth/phone_input_screen.dart';
-import 'auth/otp_verification_screen.dart';
-
-// Riverpod Providers
-final authServiceProvider = Provider<AuthService>((ref) => AuthService());
-final authStateProvider = StreamProvider<User?>((ref) {
-  return ref.watch(authServiceProvider).authStateChanges;
-});
+// --- تعريفات وهمية (مؤقتة) للملفات التي لم ننشئها بعد ---
+// ✅ تم تصحيح أسماء المتغيرات لتبدأ بحرف صغير
+const splashScreen = Center(child: CircularProgressIndicator());
+const homeWrapper = Center(child: Text("Home Screen"));
 
 void main() async {
+  // التأكد من تهيئة فلاتر قبل تشغيل أي شيء
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // تهيئة Firebase (إذا كنت تستخدمه، إذا لا، يمكن إزالة هذا السطر)
+  // await Firebase.initializeApp(); 
+  
+  // تشغيل التطبيق مع Riverpod
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -35,95 +28,39 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final router = _createRouter(ref);
+    // إنشاء وتكوين الـ Router
+    final router = GoRouter(
+      // -- نقطة البداية للتطبيق (للتجربة) --
+      initialLocation: '/login', 
+      
+      routes: [
+        // تعريف المسارات التي يعرفها التطبيق
+        GoRoute(
+          path: '/splash',
+          builder: (context, state) => splashScreen, // ✅ تم استخدام الاسم الصحيح
+        ),
+        GoRoute(
+          path: '/login',
+          builder: (context, state) => const LoginScreen(), // <-- هذه هي واجهتنا
+        ),
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => homeWrapper, // ✅ تم استخدام الاسم الصحيح
+        ),
+      ],
+    );
+
+    // بناء التطبيق الرئيسي
     return MaterialApp.router(
-      title: 'دالين',
-      theme: ThemeData(primarySwatch: Colors.amber, fontFamily: 'Tajawal'),
+      title: 'تطبيق الخط',
+      theme: ThemeData(
+        primarySwatch: Colors.brown,
+        fontFamily: 'Tajawal', // <-- تطبيق الخط الافتراضي على كل التطبيق
+        scaffoldBackgroundColor: AppColors.background,
+        // يمكنك إضافة المزيد من إعدادات الثيم هنا
+      ),
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );
-  }
-}
-
-// --- إعدادات GoRouter المُصلَحة ---
-GoRouter _createRouter(WidgetRef ref) {
-  return GoRouter(
-    initialLocation: '/splash',
-    routes: [
-      GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/signup', builder: (context, state) => const SignUpScreen()),
-      GoRoute(
-        path: '/phone-input',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>;
-          return PhoneInputScreen(
-            userId: extra['userId']!,
-            userName: extra['userName']!,
-            email: extra['email']!,
-            userType: extra['userType']!,
-          );
-        },
-      ),
-      GoRoute(
-        path: '/otp',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>;
-          return OTPVerificationScreen(
-            phoneNumber: extra['phoneNumber']!,
-            verificationId: extra['verificationId']!,
-            userName: extra['userName']!,
-            userId: extra['userId']!,
-          );
-        },
-      ),
-      GoRoute(path: '/home', builder: (context, state) => const HomeWrapper()),
-    ],
-    redirect: (context, state) {
-      final authState = ref.read(authStateProvider);
-      final location = state.matchedLocation;
-
-      // ✅ التعديل الأساسي: السماح بشاشة Splash دائماً بدون إعادة توجيه
-      if (location == '/splash') {
-        return null; // لا تُعيد التوجيه من splash أبداً
-      }
-
-      // ✅ انتظار انتهاء التحميل قبل اتخاذ قرارات التوجيه
-      if (authState.isLoading || authState.isRefreshing) {
-        return null; // ابق في المكان الحالي حتى ينتهي التحميل
-      }
-
-      final loggedIn = authState.value != null;
-
-      if (loggedIn) {
-        // إذا كان المستخدم مسجلاً ويحاول الوصول لصفحات التسجيل، وجهه للرئيسية
-        if (location == '/login' || location == '/signup') {
-          return '/home';
-        }
-      } else {
-        // إذا لم يكن مسجلاً ويحاول الوصول لأي صفحة محمية، وجهه لتسجيل الدخول
-        final publicRoutes = ['/login', '/signup', '/splash'];
-        if (!publicRoutes.contains(location)) {
-          return '/login';
-        }
-      }
-      
-      return null;
-    },
-    refreshListenable: GoRouterRefreshStream(ref.read(authServiceProvider).authStateChanges),
-  );
-}
-
-// كلاس مساعد لربط GoRouter مع Riverpod Stream
-class GoRouterRefreshStream extends ChangeNotifier {
-  GoRouterRefreshStream(Stream<dynamic> stream) {
-    notifyListeners();
-    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
-  }
-  late final StreamSubscription<dynamic> _subscription;
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
   }
 }
