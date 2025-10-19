@@ -40,9 +40,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # --- تعريف مجلد الموارد (Assets) ---
+  # --- تعريف مجلدات الموارد (Assets) ---
+  # بهذه الطريقة، أي ملف تضيفه لمجلد images أو fonts سيتعرف عليه التطبيق تلقائياً
   assets:
-    - assets/
+    - assets/images/
+    - assets/fonts/
 
   # --- تعريف الخطوط المخصصة (Custom Fonts) ---
   fonts:
