@@ -36,12 +36,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1 # هذا هو المكان الصحيح لهذه الحزمة
 
 flutter:
   uses-material-design: true
 
   # --- تعريف مجلدات الموارد (Assets) ---
-  # بهذه الطريقة، أي ملف تضيفه لمجلد images أو fonts سيتعرف عليه التطبيق تلقائياً
   assets:
     - assets/images/
     - assets/fonts/
@@ -56,3 +56,10 @@ flutter:
           weight: 500
         - asset: assets/fonts/Tajawal-Bold.ttf
           weight: 700
+
+# --- إعدادات أيقونة التطبيق (يجب أن تكون هنا في نهاية الملف) ---
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo_app_icon.png" # <--- تم التعديل هنا
+  min_sdk_android: 21
